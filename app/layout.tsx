@@ -54,6 +54,9 @@ export const metadata: Metadata = {
     "podcast guest interview",
     "broadcast operator speaker",
   ],
+  verification: {
+    google: "sbfqByYDGyONKwWMdcl95n-XTvbJg1qu-wDHG1vhVeg",
+  },
   authors: [{ name: "Howie Zales" }],
   creator: "Howie Zales",
   openGraph: {
