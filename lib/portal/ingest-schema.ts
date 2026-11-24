@@ -48,7 +48,8 @@ export const ingestPayloadSchema = z
     org: slug,
     program: slug,
     sessionNumber: z.number().int().min(1).max(999),
-    heldOn: isoDate,
+    // null = the session has not been held yet (slides prepared ahead of time).
+    heldOn: isoDate.nullable(),
     title: z.string().trim().min(1).max(200),
     summaryMd: z.string().min(1).max(40_000),
     tasks: z.array(lineItem).max(50),
