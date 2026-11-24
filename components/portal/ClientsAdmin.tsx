@@ -11,8 +11,9 @@ export type DisableAction = (userId: string) => Promise<CoachResult>;
 
 function Status({ result }: { result: CoachResult | null }) {
   return (
-    <p role="status" className={`text-sm min-h-5 ${result?.ok === false ? "text-red" : "text-green"}`}>
-      {result?.message}
+    <p role="status" className="text-sm min-h-5">
+      <span className={result?.ok === false ? "text-red" : "text-green"}>{result?.message}</span>
+      {result?.ok && result.warning && <span className="text-amber"> {result.warning}</span>}
     </p>
   );
 }

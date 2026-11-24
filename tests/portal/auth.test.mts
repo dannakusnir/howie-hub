@@ -426,7 +426,7 @@ describe("principals", () => {
     const clientId = await addUser("sneaky@acme.test", "client");
     const victimId = await addUser("victim@acme.test", "client");
     const g = guardsFor(loader(await sessionFor(clientId)));
-    const actions = createCoachActions({ requireStaff: g.requireStaff, dal: (p) => forStaff(p, db) });
+    const actions = createCoachActions({ requireStaff: g.requireStaff, dal: (p) => forStaff(p, db), ghl: async () => ({ ok: true, contactId: "stub" }) });
     const sid = sessionIds[0]!;
     const snapshot = async () =>
       JSON.stringify({
@@ -451,7 +451,7 @@ describe("principals", () => {
   it("control: a coach principal can call them (so the refusals above come from the role, not a broken harness)", async () => {
     const coachId = await addUser("coach2@portal.test", "coach");
     const g = guardsFor(loader(await sessionFor(coachId)));
-    const actions = createCoachActions({ requireStaff: g.requireStaff, dal: (p) => forStaff(p, db) });
+    const actions = createCoachActions({ requireStaff: g.requireStaff, dal: (p) => forStaff(p, db), ghl: async () => ({ ok: true, contactId: "stub" }) });
     const sid = sessionIds[1]!;
     const draft = { title: "Real title", summaryMd: "Real summary", tasks: ["do it"], nextTime: ["bring it"] };
     assert.deepEqual(await actions.saveDraft(sid, draft), { ok: true, message: "Saved." });

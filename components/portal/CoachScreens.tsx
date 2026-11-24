@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ASSET_KINDS } from "@/lib/portal/asset-kinds";
-import type { DraftQueueEntry, StaffSessionDto } from "@/lib/portal/data/dto";
+import type { DraftQueueEntry, PublishedSessionEntry, StaffSessionDto } from "@/lib/portal/data/dto";
 import Image from "next/image";
 import { Brackets, HudStrip, Kicker } from "./Hud";
 import { formatDay, Readout } from "./Shell";
 
-export type CoachResult = { readonly ok: true; readonly message: string } | { readonly ok: false; readonly message: string };
+/** `warning` is set when the action succeeded but a follow-up (GoHighLevel) did not. */
+export type CoachResult =
+  | { readonly ok: true; readonly message: string; readonly warning?: string }
+  | { readonly ok: false; readonly message: string };
 
 const DAY_TIME = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
@@ -49,6 +52,49 @@ export function DraftQueue({ drafts, sessionBase }: { drafts: readonly DraftQueu
               </Link>
             </li>
           ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+const PUBLISHED_DAY = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+
+/** Sessions clients can already see. Each links to the editor, where Unpublish lives. */
+export function PublishedList({ sessions, sessionBase }: { sessions: readonly PublishedSessionEntry[]; sessionBase: string }) {
+  return (
+    <section aria-labelledby="published-title" className="relative px-6 pb-8 md:px-12 md:pb-12">
+      <Kicker>Visible to clients</Kicker>
+      <h2 id="published-title" className="text-3xl md:text-4xl font-black tracking-[-0.03em] leading-[0.98]">
+        Published
+      </h2>
+      <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--p-dim)]">
+        Open a session to read it again or to unpublish it.
+      </p>
+
+      {sessions.length === 0 ? (
+        <p className="mt-8 text-[var(--p-dim)]">Nothing published yet.</p>
+      ) : (
+        <ul className="mt-8 border-t border-[var(--p-line)]">
+          {sessions.map((s) => {
+            const total = s.openItems + s.doneItems;
+            return (
+              <li key={s.id} className="border-b border-[var(--p-line)]">
+                <Link href={`${sessionBase}/${s.id}`} className="group grid gap-x-6 gap-y-1 py-5 md:grid-cols-[10rem_1fr_auto_auto] md:items-baseline hover:bg-white/[0.03] -mx-3 px-3 rounded-lg transition-colors duration-200">
+                  <Readout>
+                    {s.orgName}, session {s.number}
+                  </Readout>
+                  <span className="text-lg font-semibold group-hover:text-green transition-colors duration-200">
+                    {s.title ?? "Untitled session"}
+                  </span>
+                  <Readout>Published {PUBLISHED_DAY.format(s.publishedAt)}</Readout>
+                  <Readout tone={total === 0 ? "dim" : s.openItems === 0 ? "green" : "amber"}>
+                    {total === 0 ? "No items" : `${s.doneItems} of ${total} done`}
+                  </Readout>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -264,8 +310,9 @@ export function DraftEditor({
           )}
 
           {dirty && !published && <span className="text-sm text-[var(--p-dim)]">Save your changes before publishing.</span>}
-          <p role="status" className={`text-sm ${result?.ok === false ? "text-red" : "text-green"}`}>
-            {result?.message}
+          <p role="status" className="text-sm">
+            <span className={result?.ok === false ? "text-red" : "text-green"}>{result?.message}</span>
+            {result?.ok && result.warning && <span className="text-amber"> {result.warning}</span>}
           </p>
         </div>
       </form>

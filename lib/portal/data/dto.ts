@@ -115,6 +115,26 @@ export type DraftQueueEntry = {
   readonly editedAt: Date | null;
 };
 
+export type PublishedSessionEntry = {
+  readonly id: string;
+  readonly orgSlug: string;
+  readonly orgName: string;
+  readonly programSlug: string;
+  readonly number: number;
+  readonly title: string | null;
+  readonly publishedAt: Date;
+  readonly openItems: number;
+  readonly doneItems: number;
+};
+
+/** Who should hear about a freshly published session: the enabled client users of that
+ *  session's own organisation (resolved from the database, never from the browser). */
+export type PublishRecipients = {
+  readonly orgId: string;
+  readonly number: number;
+  readonly clients: readonly { readonly email: string; readonly name: string | null }[];
+};
+
 export type StaffAssetDto = AssetFileDto & { readonly position: number; readonly sha256: string };
 
 export type StaffSessionDto = {

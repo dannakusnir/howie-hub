@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import type { CoachResult, DraftInput } from "../../../components/portal/CoachScreens";
 import { forStaff } from "../data/staff";
+import { syncContact } from "../ghl";
 import { requireStaff } from "../principal";
 import { createCoachActions } from "./coach-core";
 
-const actions = createCoachActions({ requireStaff, dal: (p) => forStaff(p) });
+const actions = createCoachActions({ requireStaff, dal: (p) => forStaff(p), ghl: (c) => syncContact(c) });
 
 function refreshed(result: CoachResult): CoachResult {
   if (result.ok) revalidatePath("/portal/coach", "layout");

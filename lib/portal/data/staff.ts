@@ -20,6 +20,8 @@ import {
   type ItemDto,
   type Ok,
   type OrgSummary,
+  type PublishedSessionEntry,
+  type PublishRecipients,
   type Refusal,
   type StaffAssetDto,
   type StaffPrincipal,
@@ -262,6 +264,63 @@ export function forStaff(p: StaffPrincipal, db: PortalDb = getDb()) {
           and(eq(cs.status, "draft"), or(isNotNull(cs.lastIngestedAt), isNotNull(cs.editedAt))),
         )
         .orderBy(desc(sql`greatest(${cs.lastIngestedAt}, ${cs.editedAt})`), asc(cs.number));
+    },
+
+    /** Published sessions across every organisation, newest first, with tick counts. */
+    async publishedSessions(): Promise<PublishedSessionEntry[]> {
+      need("viewAllOrgs");
+      const tickCount = (done: boolean) =>
+        sql<number>`(select count(*)::int from ${sessionItems} where ${sessionItems.sessionId} = ${cs.id} and ${sessionItems.orgId} = ${cs.orgId} and ${sessionItems.doneAt} is ${done ? sql`not null` : sql`null`})`;
+      const rows = await db
+        .select({
+          id: cs.id,
+          orgSlug: organisations.slug,
+          orgName: organisations.name,
+          programSlug: programs.slug,
+          number: cs.number,
+          title: cs.title,
+          publishedAt: cs.publishedAt,
+          openItems: tickCount(false),
+          doneItems: tickCount(true),
+        })
+        .from(cs)
+        .innerJoin(organisations, eq(organisations.id, cs.orgId))
+        .innerJoin(engagements, and(eq(engagements.id, cs.engagementId), eq(engagements.orgId, cs.orgId)))
+        .innerJoin(programs, eq(programs.id, engagements.programId))
+        .where(and(eq(cs.status, "published"), isNotNull(cs.publishedAt)))
+        .orderBy(desc(cs.publishedAt), asc(organisations.name), asc(cs.number));
+      return rows.flatMap((r) => (r.publishedAt === null ? [] : [{ ...r, publishedAt: r.publishedAt }]));
+    },
+
+    /** Enabled client users of the organisation that owns this session. null when no such session. */
+    async publishRecipients(sessionId: string): Promise<PublishRecipients | null> {
+      need("publish");
+      if (!isUuid(sessionId)) return null;
+      const [row] = await db.select({ orgId: cs.orgId, number: cs.number }).from(cs).where(eq(cs.id, sessionId));
+      if (row === undefined) return null;
+      const clients = await db
+        .select({ email: users.email, name: users.name })
+        .from(users)
+        .where(and(eq(users.orgId, row.orgId), eq(users.role, "client"), sql`${users.disabledAt} is null`))
+        .orderBy(asc(users.email));
+      return { orgId: row.orgId, number: row.number, clients };
+    },
+
+    /** Records the outcome of a GoHighLevel sync. Never carries secrets: callers pass reasons and counts only. */
+    async recordGhlSync(input: {
+      orgId: string;
+      sessionId?: string;
+      ok: boolean;
+      detail: Record<string, unknown>;
+    }): Promise<void> {
+      need("viewAllOrgs");
+      await db.transaction(async (tx) => {
+        await audit(tx, input.ok ? "ghl_sync_ok" : "ghl_sync_failed", {
+          orgId: input.orgId,
+          ...(input.sessionId === undefined ? {} : { sessionId: input.sessionId }),
+          detail: input.detail,
+        });
+      });
     },
 
     async session(id: string): Promise<StaffSessionDto | null> {
