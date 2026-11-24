@@ -57,6 +57,15 @@ describe("proxy", () => {
     assert.equal(post(`http://${HOST}.evil.test`).status, 403, "exact host, not a prefix");
     assert.equal(post("null").status, 403);
     assert.equal(post("not a url").status, 403);
+    // A real browser form POST: Chrome sends Origin "null" under Referrer-Policy same-origin
+    // and marks the request with Sec-Fetch-Site. The browser's mark decides.
+    const browserPost = (site: string, origin = "null") =>
+      proxy(req("/api/portal/auth/verify", { method: "POST", headers: { origin, "sec-fetch-site": site } }));
+    assert.notEqual(browserPost("same-origin").status, 403, "the sign-in button must work");
+    assert.equal(browserPost("cross-site").status, 403);
+    assert.equal(browserPost("same-site").status, 403, "a sibling subdomain is not us");
+    assert.equal(browserPost("none").status, 403);
+    assert.equal(browserPost("cross-site", "http://portal.test").status, 403, "a matching Origin does not override the browser's mark");
     // GET is never origin-checked
     assert.notEqual(proxy(req("/api/portal/assets/x", { headers: { origin: "http://evil.test" } })).status, 403);
   });

@@ -6,7 +6,7 @@ import { readSessionToken } from "./lib/portal/session-cookie";
 //
 // What it does, and what it deliberately does not do:
 //   - security headers on every portal response;
-//   - an exact-host check on state-changing requests (a browser's Origin must equal Host);
+//   - a same-origin check on state-changing requests (Sec-Fetch-Site, else Origin = Host);
 //   - an OPTIMISTIC redirect to the login page when a /portal page has no session cookie.
 // A cookie being present proves nothing. Whether the session is real, the user enabled and
 // the role right is decided in lib/portal/principal.ts on every request.
@@ -38,22 +38,33 @@ function isPublicPage(pathname: string): boolean {
   );
 }
 
-function originMatchesHost(request: NextRequest): boolean {
+/**
+ * Is this state-changing request from our own pages?
+ *
+ * Chrome sends `Origin: null` on a plain form POST when the page's Referrer-Policy is
+ * `same-origin` (found 2026-11-24: the sign-in button was answered 403). So the Origin
+ * header alone cannot decide. `Sec-Fetch-Site` is set by the browser and cannot be set by
+ * page script: when present it is the authority.
+ */
+function isSameSiteWrite(request: NextRequest): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  if (site !== null) return site === "same-origin";
+
   const origin = request.headers.get("origin");
-  // No Origin: not a browser form or fetch from another site (those always send one), so
-  // there is no cookie to ride. Bearer-token API clients (ingest) land here.
+  // No Sec-Fetch-Site and no Origin: not a browser (those send at least one), so there is
+  // no cookie to ride. Bearer-token API clients (ingest) land here.
   if (origin === null) return true;
   try {
     return new URL(origin).host === request.headers.get("host");
   } catch {
-    return false; // "null" and other malformed origins
+    return false; // "null" and other malformed origins from a client without Sec-Fetch-Site
   }
 }
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
-  if (!SAFE_METHODS.has(request.method) && !originMatchesHost(request)) {
+  if (!SAFE_METHODS.has(request.method) && !isSameSiteWrite(request)) {
     return secured(new NextResponse("Forbidden", { status: 403 }));
   }
 
