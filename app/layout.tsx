@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { GoogleAnalytics } from "@next/third-parties/google";
-import ClientEffects from "@/components/ClientEffects";
-import PageTransition from "@/components/PageTransition";
-import StructuredData from "@/components/StructuredData";
-
-const GA_ID = "G-34C463TNPE";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -93,14 +87,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
-      <head>
-        <StructuredData />
-      </head>
-      <body className="bg-black text-white antialiased custom-cursor">
-        <ClientEffects />
-        <PageTransition>{children}</PageTransition>
-      </body>
-      <GoogleAnalytics gaId={GA_ID} />
+      <body className="bg-black text-white antialiased">{children}</body>
     </html>
   );
 }

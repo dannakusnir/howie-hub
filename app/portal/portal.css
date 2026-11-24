@@ -1,0 +1,161 @@
+/* Portal surface. Inherits the site tokens in app/globals.css; adds only what an
+   operating screen needs: readable prose, themed browser surfaces, one tick motion. */
+
+.portal {
+  --p-line: rgba(255, 255, 255, 0.08);
+  --p-line-strong: rgba(255, 255, 255, 0.16);
+  --p-panel: rgba(255, 255, 255, 0.03);
+  --p-dim: #a8b0ab;
+  --p-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 100dvh;
+  color: #fff;
+  position: relative;
+  isolation: isolate;
+  background-image:
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 70%),
+    radial-gradient(circle, rgba(0, 255, 136, 0.07) 1px, transparent 1px);
+  background-size: auto, 40px 40px;
+  background-attachment: fixed, scroll;
+  caret-color: #00ff88;
+  scrollbar-color: rgba(0, 255, 136, 0.35) transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+.portal :focus-visible {
+  outline: 2px solid #00ff88;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.portal a {
+  text-underline-offset: 0.22em;
+}
+
+/* Tick box: a tally light, drawn rather than a native checkbox. */
+.p-tick {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  display: grid;
+  place-items: center;
+  transition:
+    background-color 220ms var(--p-ease),
+    border-color 220ms var(--p-ease);
+}
+
+.p-tick svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  stroke: #050505;
+  stroke-width: 2.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 18;
+  stroke-dashoffset: 18;
+  transition: stroke-dashoffset 260ms var(--p-ease) 60ms;
+}
+
+.p-row[data-done="true"] .p-tick {
+  background: #00ff88;
+  border-color: #00ff88;
+}
+
+.p-row[data-done="true"] .p-tick svg {
+  stroke-dashoffset: 0;
+}
+
+.p-row[data-done="true"] .p-row-text {
+  color: var(--p-dim);
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 255, 136, 0.45);
+}
+
+.p-row:hover .p-tick {
+  border-color: #00ff88;
+}
+
+/* Summary prose */
+.p-prose {
+  max-width: 68ch;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.p-prose > * + * {
+  margin-top: 1.1em;
+}
+
+.p-prose h2,
+.p-prose h3 {
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-top: 2em;
+  text-wrap: balance;
+}
+
+.p-prose h2 {
+  font-size: 1.375rem;
+}
+
+.p-prose h3 {
+  font-size: 1.125rem;
+}
+
+.p-prose ul,
+.p-prose ol {
+  padding-left: 1.25em;
+}
+
+.p-prose ul {
+  list-style: disc;
+}
+
+.p-prose ol {
+  list-style: decimal;
+}
+
+.p-prose li + li {
+  margin-top: 0.4em;
+}
+
+.p-prose li::marker {
+  color: #00ff88;
+}
+
+.p-prose strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.p-prose a {
+  color: #00ff88;
+  text-decoration: underline;
+}
+
+.p-prose blockquote {
+  padding-left: 1.1em;
+  border-left: 1px solid var(--p-line-strong);
+  color: #fff;
+  font-size: 1.125rem;
+}
+
+/* Native media, themed to the palette */
+.portal audio {
+  width: 100%;
+  height: 2.75rem;
+  color-scheme: dark;
+  accent-color: #00ff88;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-tick,
+  .p-tick svg {
+    transition: none;
+  }
+}
